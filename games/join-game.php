@@ -7,12 +7,12 @@ $input = json_decode($input, true);
 $insert = 'UPDATE game SET player2 = ? WHERE id = ?';
 try {
     $stmt = $dbh->prepare($insert);
-    $stmt->execute([$input['player2'], $input['id']]);
+    $stmt->execute([trim($input['player2']), trim($input['id'])]);
     $select = 'SELECT * FROM game WHERE id = ?';
     $stmt = $dbh->prepare($select);
-    $stmt->execute([$input['id']]);
+    $stmt->execute([trim($input['id'])]);
     $data = $stmt->fetch(PDO::FETCH_ASSOC);
-    echo json_encode(['status' => 'Ok', 'type' => 'join', 'data' => $data, 'player' => $data['player2'], 'id' => $data['id']]);
+    echo json_encode(['status' => 'Ok', 'type' => 'join', 'data' => $data, 'player' => trim($data['player2']), 'id' => trim($data['id'])]);
     exit;
 } catch (PDOException $e) {
     error_log($e->getMessage());

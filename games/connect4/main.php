@@ -132,13 +132,13 @@
         }
 
         .cell.player1 {
-            background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
+            background: radial-gradient(circle, #3b82f6 0%, #2563eb 100%);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3);
             animation: dropPiece 0.4s ease;
         }
 
         .cell.player2 {
-            background: radial-gradient(circle, #3b82f6 0%, #2563eb 100%);
+            background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3);
             animation: dropPiece 0.4s ease;
         }
@@ -260,7 +260,6 @@
                 // Function to display the game board
                 function displayBoard($board)
                 {
-                    global $board_size;
                     foreach ($board as $index => $row) {
                         echo '<div class="board-row">';
                         foreach ($row as $row_index => $cell) {
@@ -293,7 +292,24 @@
     </div>
 
     <script>
-        function updateBoard(board) {
+        function updateBoard(board, turn) {
+            const turnIndicator = document.querySelector('.turn-indicator');
+            const player1Card = document.querySelector('.player1-card');
+            const player2Card = document.querySelector('.player2-card');
+
+            if (turn === 2) {
+                turnIndicator.textContent = 'Player 2 Turn';
+                turnIndicator.classList.remove('player1');
+                turnIndicator.classList.add('player2');
+                player1Card.classList.remove('active');
+                player2Card.classList.add('active');
+            } else {
+                turnIndicator.textContent = 'Player 1 Turn';
+                turnIndicator.classList.remove('player2');
+                turnIndicator.classList.add('player1');
+                player2Card.classList.remove('active');
+                player1Card.classList.add('active');
+            }
             let column_size = board[0].length;
             let row_size = board.length;
             for (let i = 1; i <= 6; i++) {
@@ -309,9 +325,51 @@
             }
         }
 
-        function checkBoard(board) {
+        function validMove(indexes, board) {
+            indexes = indexes.split("");
+            for (let i = 6; i > 0; i--) {
+                if (i === 0) {
+                    break;
+                }
+                //console.log(board[0][i], i);
+                if (board[i][indexes[1]] === "") {
+                    return true;
+                }
+            }
+            alert('invalid move');
+            return false;
+        }
+
+        function gameOver(socket, payload, player, who) {
+            console.log('game is over');
+
+
+            alert(player + ' won');
+            if (who === 'sending') {
+                socket.send(JSON.stringify(payload));
+            }
+            return 1;
+        }
+
+        function checkBoard(socket, board, turn, id, who) {
             const row = board.length;
             const column = board[0].length;
+            let player;
+            if (turn === 1) {
+                player = 'Player 2';
+            } else {
+                player = 'Player 1';
+            }
+            let payload = {
+                game: 'connect-four',
+                winner: player,
+                type: 'game-over',
+                board: board,
+                id: id
+            };
+            //console.log(payload);
+            console.log('Checking board');
+            let game_over = 0;
             for (let i = 0; i < board.length; i++) {
                 for (let j = 0; j < board[0].length; j++) {
                     if (
@@ -321,8 +379,8 @@
                         board[i][j + 2] === 1 &&
                         board[i][j + 3] === 1
                     ) {
-                        alert("winner horizontal");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         row - i >= 4 &&
                         board[i][j] === 1 &&
@@ -330,8 +388,8 @@
                         board[i + 2][j] === 1 &&
                         board[i + 3][j] === 1
                     ) {
-                        alert("winner veritcal");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         row - i >= 4 &&
                         column - j >= 4 &&
@@ -340,8 +398,8 @@
                         board[i + 2][j + 2] === 1 &&
                         board[i + 3][j + 3] === 1
                     ) {
-                        alert("winner diag down right");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         i - 3 >= 0 &&
                         column - j >= 4 &&
@@ -350,8 +408,8 @@
                         board[i - 2][j + 2] === 1 &&
                         board[i - 3][j + 3] === 1
                     ) {
-                        alert("winner diag up right");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         i - 3 >= 0 &&
                         j - 1 >= 0 &&
@@ -360,8 +418,8 @@
                         board[i - 2][j - 2] === 1 &&
                         board[i - 3][j - 3] === 1
                     ) {
-                        alert("winner diag up left");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         row - i >= 4 &&
                         j - 3 >= 0 &&
@@ -370,8 +428,8 @@
                         board[i + 2][j - 2] === 1 &&
                         board[i + 3][j - 3] === 1
                     ) {
-                        alert("winner diag down left");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         column - j >= 4 &&
                         board[i][j] === 2 &&
@@ -379,8 +437,8 @@
                         board[i][j + 2] === 2 &&
                         board[i][j + 3] === 2
                     ) {
-                        alert("winner horizontal");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         row - i >= 3 &&
                         board[i][j] === 2 &&
@@ -388,8 +446,8 @@
                         board[i + 2][j] === 2 &&
                         board[i + 3][j] === 2
                     ) {
-                        alert("winner veritcal");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         row - i >= 4 &&
                         column - j >= 4 &&
@@ -398,8 +456,8 @@
                         board[i + 2][j + 2] === 2 &&
                         board[i + 3][j + 3] === 2
                     ) {
-                        alert("winner diag down right");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         i - 3 >= 0 &&
                         column - j >= 4 &&
@@ -408,18 +466,18 @@
                         board[i - 2][j + 2] === 2 &&
                         board[i - 3][j + 3] === 2
                     ) {
-                        alert("winner diag up right");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         i - 3 >= 0 &&
-                        j - 1 >= 0 &&
+                        j - 3 >= 0 &&
                         board[i][j] === 2 &&
                         board[i - 1][j - 1] === 2 &&
                         board[i - 2][j - 2] === 2 &&
                         board[i - 3][j - 3] === 2
                     ) {
-                        alert("winner diag up left");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     } else if (
                         row - i >= 4 &&
                         j - 3 >= 0 &&
@@ -428,16 +486,20 @@
                         board[i + 2][j - 2] === 2 &&
                         board[i + 3][j - 3] === 2
                     ) {
-                        alert("winner diag down left");
-                        break;
+                        game_over = gameOver(socket, payload, player, who)
+                        return game_over;
                     }
                 }
+                //console.log(payload)
+
             }
+            //console.log(game_over);
+
         }
         document.addEventListener('DOMContentLoaded', () => {
             const id = <?= $_GET['id']; ?>;
             const player = String(<?= json_encode($_GET['player']); ?>);
-            const socket = new WebSocket("ws://10.0.0.135:3000/");
+            const socket = new WebSocket("ws://10.0.0.135:3001/");
 
             socket.addEventListener('open', event => {
                 console.log('WebSocket connection established!');
@@ -452,17 +514,22 @@
             for (let q = 0; q < 7; q++) {
                 document.getElementById(row[q]).addEventListener('click', () => {
                     const payload = {
+                        game: 'connect-four',
                         id: id,
                         player: player,
                         type: 'update',
                         placement: row[q]
                     };
-                    socket.send(JSON.stringify(payload));
+                    let valid = validMove(row[q], board);
+                    if (valid) {
+                        socket.send(JSON.stringify(payload));
+                    }
                 });
             }
 
             socket.addEventListener('message', msg => {
-                console.log('main.php', JSON.parse(msg.data), JSON.parse(msg.data).placement);
+
+                console.log('main.php', JSON.parse(msg.data), 'placement ' + JSON.parse(msg.data).placement, 'type ' + JSON.parse(msg.data).type);
                 let placement;
                 let column;
 
@@ -475,9 +542,12 @@
                     let found = 0;
                     let f = 0;
 
-                    console.log(board);
+                    //console.log(board);
                     for (let i = 6; i > row; i--) {
-                        console.log(board[0][i], i);
+                        if (i === 0) {
+                            break;
+                        }
+                        //console.log(board[0][i], i);
                         if (board[i][column] === "") {
                             board[i][column] = turn;
                             f = i;
@@ -489,30 +559,15 @@
                     if (found === 0) {
                         alert('Invalid move - column is full!');
                     } else {
-                        const turnIndicator = document.querySelector('.turn-indicator');
-                        const player1Card = document.querySelector('.player1-card');
-                        const player2Card = document.querySelector('.player2-card');
 
-                        if (turn === 1) {
-                            turnIndicator.textContent = 'Player 2 Turn';
-                            turnIndicator.classList.remove('player1');
-                            turnIndicator.classList.add('player2');
-                            player1Card.classList.remove('active');
-                            player2Card.classList.add('active');
-                        } else {
-                            turnIndicator.textContent = 'Player 1 Turn';
-                            turnIndicator.classList.remove('player2');
-                            turnIndicator.classList.add('player1');
-                            player2Card.classList.remove('active');
-                            player1Card.classList.add('active');
-                        }
 
-                        updateBoard(board);
+                        //updateBoard(board);
                         const payload = {
                             type: 'update-board',
                             id: id,
                             board: board,
-                            placement: placement[0] + placement[1]
+                            placement: placement[0] + placement[1],
+                            turn: turn
                         };
                         socket.send(JSON.stringify(payload));
                     }
@@ -520,17 +575,64 @@
                     if (JSON.parse(msg.data).id !== id) {
                         return;
                     }
+                    console.log('update-board', msg.data)
                     placement = JSON.parse(msg.data).placement.split("");
                     column = parseInt(placement[1]);
                     board = JSON.parse(msg.data).board;
-                    updateBoard(board);
-                    checkBoard(board);
+                    updateBoard(board, JSON.parse(msg.data).turn);
+                    let game_over = checkBoard(socket, board, JSON.parse(msg.data).turn, JSON.parse(msg.data).id, 'sending');
+
+                } else if (JSON.parse(msg.data).type === 'game-over' && id === JSON.parse(msg.data).id) {
+                    updateBoard(board, JSON.parse(msg.data).turn);
+                    if (emptyBoardCheck(board) && confirm('Game is over. Restart match?')) {
+                        board = <?= json_encode($board) ?>;
+
+                    } else {
+                        const id = <?= $_GET['id']; ?>;
+                        const delete_game = "http://10.0.0.135/games/delete-game.php";
+
+                        gameFetch(delete_game, id);
+                        console.log('game over routing')
+                        setTimeout(() => {
+                            window.location = 'http://10.0.0.135:/games/game-select.php';
+                        }, 1000);
+                    }
+
+
                 } else {
                     console.log('returning');
                     return;
                 }
             });
         });
+        async function gameFetch(url, message) {
+            console.log('gameFetch Called');
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: message,
+            });
+
+            if (!res.ok) {
+                throw new Error(`Error ${res.status}`);
+            }
+            const data = await res.json();
+
+            return data;
+        }
+
+        function emptyBoardCheck(board) {
+            for (let i = 0; i <= 6; i++) {
+                if (board[i][6] !== '') {
+                    console.log('not empty');
+                    return false;
+                }
+            }
+            console.log('empty');
+            return true;
+        }
     </script>
 </body>
 

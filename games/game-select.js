@@ -13,6 +13,7 @@ wss.on("connection", (ws) => {
     const update_url = "http://10.0.0.135/games/connect4/update-game.php";
     const all_url = "http://10.0.0.135/games/all-game.php";
     const join_url = "http://10.0.0.135/games/join-game.php";
+    const delete_game = "http://10.0.0.135/games/delete-game.php";
 
     console.log(`Received: ${message}`);
     // FETCH TO PHP TO ADD TO SERVER
@@ -47,14 +48,6 @@ wss.on("connection", (ws) => {
           client.send(JSON.stringify(payload));
         }
       });
-    } else if (json_msg.type === "update") {
-      data = await gameFetch(update_url, message);
-      payload = {
-        data: data,
-        type: json_msg.type,
-      };
-      console.log(data);
-      ws.send(JSON.stringify(payload));
     } else if (json_msg.type === "join") {
       console.log("join");
       data = await gameFetch(join_url, message);
@@ -68,13 +61,14 @@ wss.on("connection", (ws) => {
     } else if (json_msg.type === "update-board") {
       console.log("sending update board", json_msg);
       wss.clients.forEach((client) => {
-          client.send(JSON.stringify(json_msg));
-        
+        client.send(JSON.stringify(json_msg));
       });
-    } else if (json_msg.type === 'winner') {
-         wss.clients.forEach((client) => {
-           client.send(JSON.stringify(json_msg));
-         });
+    } else if (json_msg.type === "game-over") {
+      //await gameFetch(delete_game, json_msg);
+      // DELETE GAME FROM DB USING ID (FETCH)
+      wss.clients.forEach((client) => {
+        client.send(JSON.stringify(json_msg));
+      });
     } else {
       data = await gameFetch(all_url, message);
       payload = {
