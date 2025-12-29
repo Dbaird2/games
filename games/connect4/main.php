@@ -99,7 +99,7 @@
         }
 
         .cell {
-            width: 60px;
+            width: 61px;
             height: 60px;
             background: #1a202c;
             border-radius: 50%;
@@ -229,8 +229,8 @@
             }
 
             .cell {
-                width: 45px;
-                height: 45px;
+                width: 1.93rem;
+                height: 1.93rem;
             }
 
             .game-title {

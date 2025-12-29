@@ -31,6 +31,7 @@ wss.on("connection", (ws) => {
       return data;
     }
     const json_msg = JSON.parse(message);
+    console.log(json_msg);
 
     if (json_msg.type === "update-board") {
       console.log("sending update board", json_msg);
@@ -51,6 +52,14 @@ wss.on("connection", (ws) => {
       };
       console.log(data);
       ws.send(JSON.stringify(payload));
+    } else if (json_msg.type === "chess-update") {
+      wss.clients.forEach((client) => {
+        client.send(JSON.stringify(json_msg));
+      });
+    } else if (json_msg.type === "chess-join") {
+      wss.clients.forEach((client) => {
+        client.send(JSON.stringify(json_msg));
+      });
     }
   });
 

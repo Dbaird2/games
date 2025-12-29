@@ -303,7 +303,9 @@
             <div class="form-group">
                 <select name="game" id="games">
                     <option value="connect-four">Connect Four</option>
+                    <option value="chess">Chess</option>
                 </select>
+
                 <input type="text" id="player-name" placeholder="Enter your name...">
             </div>
             <button id="create">Create Game</button>
@@ -331,13 +333,18 @@
             });
 
             socket.addEventListener('message', event => {
+
                 const game = JSON.parse(event.data);
                 const listings = document.querySelector('.game-listings');
 
                 if (game.type === 'create') {
                     console.log('game', game.full_data);
                     if (game.full_data.ip === ip) {
-                        window.location = 'http://10.0.0.135/games/connect4/main.php?id=' + JSON.parse(game.data).id + '&player=' + JSON.parse(game.data).player1;
+                        if (document.getElementById('games').value === 'connect-four') {
+                            window.location = 'http://10.0.0.135/games/connect4/main.php?id=' + JSON.parse(game.data).id + '&player=' + JSON.parse(game.data).player1;
+                        } else {
+                            window.location = 'http://10.0.0.135/games/chess/main.php?id=' + JSON.parse(game.data).id + '&player=' + JSON.parse(game.data).player1 + '&player1=true';
+                        }
                     } else {
                         socket.send(JSON.stringify('All'));
                     }
@@ -381,7 +388,7 @@
                                         <div class="player waiting">Waiting for opponent...</div>
                                     </div>
                                 </div>
-                                <button class="join-btn" data-game-id="${data.id}">Join Game</button>
+                                <button class="join-btn" data-game-type="${data.type}" data-game-id="${data.id}">Join Game</button>
                             `;
                         }
 
@@ -391,16 +398,23 @@
                     const joinBtns = document.querySelectorAll('.join-btn');
                     joinBtns.forEach((btn) => {
                         btn.addEventListener('click', function(event) {
-                            const gameId = this.getAttribute('data-game-id');
+                            const id = this.getAttribute('data-game-id');
+                            const game_type = this.getAttribute('data-game-type');
+                            console.log(game_type);
                             let name = prompt('Enter your name:');
                             if (name !== null && name !== '') {
                                 const payload = {
-                                    id: gameId,
+                                    id: id,
                                     player2: name,
-                                    type: 'join'
+                                    type: 'join',
+                                    game: game_type
                                 };
                                 socket.send(JSON.stringify(payload));
-                                window.location = 'http://10.0.0.135/games/connect4/main.php?id=' + gameId + '&player=' + name;
+                                if (game_type === 'connect-four') {
+                                    window.location = 'http://10.0.0.135/games/connect4/main.php?id=' + id + '&player=' + name;
+                                } else if (game_type === 'chess') {
+                                    window.location = 'http://10.0.0.135/games/chess/main.php?id=' + id + '&player=' + name + '&player2=true';
+                                }
                             }
                         });
                     });

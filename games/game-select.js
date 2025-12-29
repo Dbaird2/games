@@ -50,10 +50,10 @@ wss.on("connection", (ws) => {
       });
     } else if (json_msg.type === "join") {
       console.log("join");
+
       data = await gameFetch(join_url, message);
       console.log("join data", data);
       payload = {
-        turn: data.turn,
         data: data.data,
         type: json_msg.type ?? "All",
       };
